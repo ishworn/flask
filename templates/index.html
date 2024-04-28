@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Camera Feed</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Define styles for camera button container */
+        .button-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        /* Define styles for camera icon */
+        .camera-icon {
+            cursor: pointer;
+            padding: 5px; /* Add padding to the icon container */
+            background-color: #007bff; /* Background color for the icon container */
+            border-radius: 50%; /* Make the icon container round */
+        }
+
+        /* Define styles for camera icon */
+        .camera-icon i {
+            color: #fff; /* Icon color */
+            font-size: 24px; /* Icon size */
+        }
+    </style>
+</head>
+<body>
+    <h1>Live Camera Feed</h1>
+  
+    <img src="{{ url_for('static', filename='camera.jpg') }}" alt="Camera Image" usemap = "#image_map" />
+    <map name="image_map">
+        <area alt="cctv" title="cctv"  onclick="showCameraFeed(1)"  coords="186,90 191,86 182,84 192,76 193,86 196,80 205,91 196,100 " shape="polygon">
+        <area alt="cctv" title="cctv"  onclick="showCameraFeed(2)" coords="329,87 343,80 347,84 347,76 353,87 347,85 349,90 336,99 " shape="polygon">
+        <area alt="cctv" title="cctv"  onclick="showCameraFeed(3)" coords="267,130 258,139 269,149 274,146 274,152 283,145 276,144 278,139 " shape="polygon">
+    </map>
+
+
+    <div class="button-container">
+        <span class="camera-icon" onclick="showCameraFeed(1)">
+            <i class="bi bi-camera"></i> <!-- Bootstrap camera icon -->
+        </span>
+        <!--We can add more camera buttons on this section  -->
+    </div>
+
+    <!-- Bootstrap Icons Script -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        function showCameraFeed(cameraId) {
+            var imageUrl = "{{ url_for('video_feed') }}?camera=" + cameraId;
+            var popupWindow = window.open(imageUrl, "_blank", "width=800,height=600");
+            popupWindow.focus();
+        }
+    </script>
+</body>
+</html>

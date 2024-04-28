@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Camera Feed</title>
+    <style>
+     
+        .button-container {
+            position: relative;
+            display: inline-block;
+        }
+
+     
+        .camera-button {
+            position: absolute;
+            cursor: pointer;
+            padding: 5px 10px;
+            background-color: #007bff; 
+            color: #fff; 
+            border: none;
+            border-radius: 5px; 
+            font-size: 16px; 
+        }
+    </style>
+</head>
+<body>
+    <h1>Live Camera Feed</h1>
+
+    <div class="button-container">
+        
+        <button class="camera-button" style="top: 100px; left: 100px;" onclick="showCameraFeed('ip camera url')">Camera 1</button>
+        <!-- Given url is dummy we need to change this to valid one and we can add more buttons for different camera present in flor plan -->
+   
+    </div>
+
+    <script>
+        function showCameraFeed(cameraUrl) {
+            //  to show the camera feed
+            document.getElementById("camera-feed").style.display = "block";
+            // the camera feed URL to the provided cameraUrl
+            document.getElementById("camera-image").src = cameraUrl;
+        }
+    </script>
+</body>
+</html>
+
+
+
+
