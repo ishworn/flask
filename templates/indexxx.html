@@ -3,47 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Camera Feed</title>
-    <style>
-     
-        .button-container {
-            position: relative;
-            display: inline-block;
-        }
-
-     
-        .camera-button {
-            position: absolute;
-            cursor: pointer;
-            padding: 5px 10px;
-            background-color: #007bff; 
-            color: #fff; 
-            border: none;
-            border-radius: 5px; 
-            font-size: 16px; 
-        }
-    </style>
+    <title>Image Fetcher</title>
 </head>
 <body>
-    <h1>Live Camera Feed</h1>
-
-    <div class="button-container">
-        
-        <button class="camera-button" style="top: 100px; left: 100px;" onclick="showCameraFeed('ip camera url')">Camera 1</button>
-        <!-- Given url is dummy we need to change this to valid one and we can add more buttons for different camera present in flor plan -->
-   
+    <div class="dropdown">
+        <button class="dropbtn">Dropdown</button>
+        <div class="dropdown-content">
+            <a href="#" onclick="loadImage('image1')">Option 1</a>
+            <a href="#" onclick="loadImage('image2')">Option 2</a>
+            <a href="#" onclick="loadImage('image3')">Option 3</a>
+        </div>
+    </div>
+    <div style="position: relative;">
+        <img id="cameraImage" src="{{ url_for('static', filename='camera.jpg') }}" alt="Camera Image" />
+        <!-- Coordinates display -->
     </div>
 
+
+
     <script>
-        function showCameraFeed(cameraUrl) {
-            //  to show the camera feed
-            document.getElementById("camera-feed").style.display = "block";
-            // the camera feed URL to the provided cameraUrl
-            document.getElementById("camera-image").src = cameraUrl;
+        function loadImage(name) {
+            fetch(`/get_image?name=${name}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.blob();
+                })
+                .then(blob => {
+                    document.getElementById('cameraImage').src = URL.createObjectURL(blob);
+                })
+                .catch(error => console.error('Error fetching image:', error));
         }
     </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
