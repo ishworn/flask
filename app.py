@@ -1,16 +1,20 @@
 import cv2
+import pypyodbc as odbc
 from flask import Flask, Response, render_template, request, send_file, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from io import BytesIO
 from geoalchemy2 import Geometry
-
-
-
-
+from sqlalchemy import Column, Integer, ForeignKey
 
 app = Flask(__name__)
 
-camera = cv2.VideoCapture(0)
+
+  
+
+
+
+
+cam = cv2.VideoCapture(1)
 
 # Login authentication
 app.secret_key = "Secret Key"
@@ -26,27 +30,37 @@ db = SQLAlchemy(app)
 
 
 
+
+
 class Floor(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     floor_name = db.Column(db.String(100))
     floor_image = db.Column(db.LargeBinary)
     
 class Camera(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    camera_name = db.Column(db.String(100))
-    floor_id = db.Column(db.Integer)
-    coordinates = db.Column(Geometry(geometry_type='POINT', srid=4326))   # Assuming coordinates are stored as 'x,y' string
+  id = db.Column(db.Integer, primary_key=True)
+  camera_name = db.Column(db.String(100))
+  floor_id = db.Column(db.Integer, ForeignKey('Floor.id'))  # Define ForeignKey
+  coordinate_x = db.Column(db.Integer)
+  coordinate_y = db.Column(db.Integer)
+  
+  def get_coordinates(self):
+      if self.coordinate_x is not None and self.coordinate_y is not None:
+         return {'x': self.coordinate_x, 'y': self.coordinate_y}
+      else:
+         return None
 
-    def get_coordinates(self):
-        if self.coordinates:
-            return (self.coordinates.x, self.coordinates.y)
-        return None
+    
+ 
+
+  # Return None if coordinates are not set
+
 class Test(db.Model):
     id = db.Column(db.Integer, primary_key=True)  
 
 def generate_frames():
     while True:
-        success, frame = camera.read()
+        success, frame = cam.read()
         if not success:
             break
         else:
@@ -57,17 +71,13 @@ def generate_frames():
 
 @app.route('/')
 def index():
-    camera = Camera.query.first()
-    floors = Floor.query.all()
-    
-    
-    coordinates = None
-    if camera:
-        coordinates = {'x': camera.get_coordinates()[0], 'y': camera.get_coordinates()[1]}
-        return render_template('index.html' , floors= floors ,coordinates = coordinates)
+ 
+  floors = Floor.query.all()
+  
+  
+  return render_template('index.html' , floors= floors ,)
+  # ... rest of the code
 
-    else :
-     return jsonify({'error': 'Camera not found'})
 
    
     
@@ -95,6 +105,22 @@ def get_image(floor_id):
             return jsonify({'error': 'Image not found'})
     except Exception as e:
         return jsonify({'error': str(e)})
+    
+@app.route('/get_coordinates')
+def get_coordinates():
+    try:
+        cameras = Camera.query.all()  # Retrieve all cameras
+        coordinates = []
+        for camera in cameras:
+            camera_coords = camera.get_coordinates()  # Assuming get_coordinates returns a dictionary
+            if camera_coords:
+                coordinates.append({'camera_id': camera.id, 'x': camera_coords['x'], 'y': camera_coords['y']})
+        return jsonify(coordinates)
+    except Exception as e:
+        return jsonify({'error': str(e)})
+
+
+
 
 
 

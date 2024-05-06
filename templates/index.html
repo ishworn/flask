@@ -14,45 +14,44 @@
             padding: 5px;
             display: none;
         }
-    </style>
-    <style>
-        .dropdown {
-          position: relative;
-          display: inline-block;
-        }
 
         .camera-icon {
-          position: absolute;
-          width: 32px; /* Adjust icon width */
-          height: 32px; /* Adjust icon height */
-          background-image: url('./static/camera-image.jpg'); /* Replace with the URL of your camera icon image */
-          background-size: cover;
-          cursor: pointer; /* Optional: Change cursor to pointer on hover */
-      }
-      
-    
+            position: absolute;
+            width: 50px; /* Adjust icon width */
+            height: 50px; /* Adjust icon height */
+            background-image: url('./static/camera.png'); /* Replace with the URL of your camera icon image */
+            background-size: cover;
+            cursor: pointer; /* Optional: Change cursor to pointer on hover */
+            opacity: 1;
+        }
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
         .dropdown-content {
-          display: none;
-          position: absolute;
-          background-color: #f9f9f9;
-          min-width: 160px;
-          box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2);
-          z-index: 1;
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            min-width: 160px;
+            box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2);
+            z-index: 1;
         }
-    
+
         .dropdown:hover .dropdown-content {
-          display: block;
+            display: block;
         }
-    
+
         .dropdown-content a {
-          color: black;
-          padding: 12px 16px;
-          text-decoration: none;
-          display: block;
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
         }
-    
+
         .dropdown-content a:hover {
-          background-color: #f1f1f1;
+            background-color: #f1f1f1;
         }
     </style>
 </head>
@@ -76,39 +75,37 @@
 </nav>
 
 <div class="dropdown">
-  <button class="dropbtn">Dropdown</button>
-  <div class="dropdown-content">
-      <a href="#" onclick="loadImage(1)">Ground Floor</a>
-      <a href="#" onclick="loadImage(2)">First Floor</a>
-      <a href="#" onclick="loadImage(3)">Second Floor</a>
-  </div>
+    <button class="dropbtn">Select Floor</button>
+    <div class="dropdown-content">
+        <a href="#" onclick="loadImage(0)">Ground Floor</a>
+        <a href="#" onclick="loadImage(1)">First Floor</a>
+        <a href="#" onclick="loadImage(2)">Second Floor</a>
+    </div>
 </div>
-<div style="position: relative;">
-  <img   id="cameraImage" src="{{ url_for('static', filename='camera.jpg') }}" alt="Camera Image" style="max-width: 500px; max-height: 500px; "/>
-   
 
-    <div id="cameraIcon" class="camera-icon"></div>
-     <!-- Coordinates display -->
+<div style="position: relative;">
+    <img id="cameraImage" src="{{ url_for('static', filename='camera.jpg') }}" alt="Camera Image" style="max-width: 500px; max-height: 500px;"/>
+
+    <!-- Coordinates display -->
     <div id="coordinates"></div>
 </div>
 
 <!-- JavaScript -->
 <script>
-  function loadImage(floorId) {
-    fetch(`/get_image/${floorId}`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.blob();
-        })
-        .then(blob => {
-            document.getElementById('cameraImage').src = URL.createObjectURL(blob);
-        })
-        .catch(error => console.error('Error fetching image:', error));
-}
-
- 
+    // Function to load image for selected floor
+    function loadImage(floorId) {
+        fetch(`/get_image/${floorId}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                document.getElementById('cameraImage').src = URL.createObjectURL(blob);
+            })
+            .catch(error => console.error('Error fetching image:', error));
+    }
 
     // Function to show coordinates when mouse hovers over the image
     function showCoordinates(event) {
@@ -116,7 +113,7 @@
         var x = event.offsetX;
         var y = event.offsetY;
 
-        // Display the coordinates 
+        // Display the coordinates
         document.getElementById('coordinates').style.display = 'block';
         document.getElementById('coordinates').innerHTML = '<strong>Coordinates:</strong> X: ' + x + ', Y: ' + y;
         // Position the coordinates display near the mouse pointer
@@ -127,29 +124,57 @@
     // Function to hide coordinates when mouse leaves the image
     function hideCoordinates() {
         document.getElementById('coordinates').style.display = 'none';
-    }  
+    }
 
     // Add event listeners to the image
     var image = document.getElementById('cameraImage');
     image.addEventListener('mousemove', showCoordinates);
     image.addEventListener('mouseleave', hideCoordinates);
 
+    // Fetch camera coordinates from the server and display camera icons
+    async function fetchAllCameraCoordinates() {
+        try {
+            const response = await fetch('/get_coordinates');
 
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
 
-    // Set camera icon position based on coordinates (x, y)
-   
-      // Retrieve coordinates from Flask and position camera icon
-      var coordinates = {{ coordinates|tojson }};
-      if (coordinates) {
-          var cameraIcon = document.getElementById('cameraIcon');
-          cameraIcon.style.left = coordinates.x + 'px';
-          cameraIcon.style.top = coordinates.y + 'px';
-      }
+            const coordinates = await response.json(); // List of camera coordinates objects
 
-  
+            if (!Array.isArray(coordinates)) {
+                console.error('Coordinates is not an array:', coordinates);
+                return; // Exit the function or handle the error appropriately
+            }
 
-// Example usage: Set camera icon position at coordinates (100, 100)
-setCameraIconPosition(100, 100);
+            if (coordinates.length === 0) {
+                console.warn('No camera coordinates found');
+                return; // Handle case where no coordinates are available
+            }
+
+            coordinates.forEach(cameraData => {
+                displayCameraIcon(cameraData);  // Call function for each camera
+            });
+        } catch (error) {
+            console.error('Error fetching camera coordinates:', error);
+        }
+    }
+
+    // Function to display camera icon at specified coordinates
+    function displayCameraIcon(cameraData) {
+        const cameraIcon = document.createElement('div'); // Create a div for the camera 
+        cameraIcon.style.width = '20px'; 
+        cameraIcon.style.height = '20px';
+        cameraIcon.className = 'camera-icon'; // Set class for styling
+        cameraIcon.style.left = cameraData.x + 'px'; // Set horizontal position
+        cameraIcon.style.top = cameraData.y + 'px'; // Set vertical position
+
+        // Append the camera icon to the image container
+        document.getElementById('cameraImage').parentNode.appendChild(cameraIcon);
+    }
+
+    // Call the function to fetch and display camera coordinates
+    fetchAllCameraCoordinates();
 </script>
 
 <!-- Bootstrap and jQuery JavaScript -->
