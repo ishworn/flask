@@ -1,184 +1,292 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Live Camera Feed</title>
     <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
     <style>
-        /* Define styles for the coordinate display */
-        #coordinates {
-            position: absolute;
-            background-color: rgba(255, 255, 255, 0.8);
-            padding: 5px;
-            display: none;
-        }
+      input[type="number"],
+      select,
+      textarea {
+        width: 100%; /* Full width */
+        padding: 5px; /* Some padding */
+        border: 1px solid #ccc; /* Gray border */
+        border-radius: 4px; /* Rounded borders */
+        box-sizing: border-box; /* Make sure that padding and width stays in place */
+        margin-top: 3px; /* Add a top margin */
+        margin-bottom: 8px; /* Bottom margin */
+        resize: vertical; /* Allow the user to vertically resize the textarea (not horizontally) */
+      }
 
-        .camera-icon {
-            position: absolute;
-            width: 50px; /* Adjust icon width */
-            height: 50px; /* Adjust icon height */
-            background-image: url('./static/camera.png'); /* Replace with the URL of your camera icon image */
-            background-size: cover;
-            cursor: pointer; /* Optional: Change cursor to pointer on hover */
-            opacity: 1;
-        }
+      /* Style the submit button with a specific background color etc */
+      input[type="submit"] {
+        background-color: #3e8e41;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
 
-        .dropdown {
-            position: relative;
-            display: inline-block;
-        }
+      /* When moving the mouse over the submit button, add a darker green color */
+      input[type="submit"]:hover {
+        background-color: #3e8e41;
+      }
 
-        .dropdown-content {
-            display: none;
-            position: absolute;
-            background-color: #f9f9f9;
-            min-width: 160px;
-            box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2);
-            z-index: 1;
-        }
+      #coordinates {
+        position: absolute;
+        background-color: rgba(255, 255, 255, 0.8);
+        padding: 5px;
+        display: none;
+      }
 
-        .dropdown:hover .dropdown-content {
-            display: block;
-        }
+      .camera-icon {
+        position: absolute;
+        width: 50px; /* Adjust icon width */
+        height: 50px; /* Adjust icon height */
+        background-image: url("./static/camera.png"); /* Replace with the URL of your camera icon image */
+        background-size: cover;
+        cursor: pointer; /* Optional: Change cursor to pointer on hover */
+        opacity: 1;
+      }
 
-        .dropdown-content a {
-            color: black;
-            padding: 12px 16px;
-            text-decoration: none;
-            display: block;
-        }
+      .dropdown {
+        position: relative;
+        display: inline-block;
+      }
 
-        .dropdown-content a:hover {
-            background-color: #f1f1f1;
-        }
+      .dropdown-content {
+        display: none;
+        position: absolute;
+        background-color: #f9f9f9;
+        min-width: 160px;
+        box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
+        z-index: 1;
+      }
+
+      .dropdown:hover .dropdown-content {
+        display: block;
+      }
+
+      .dropdown-content a {
+        color: black;
+        padding: 12px 16px;
+        text-decoration: none;
+        display: block;
+      }
+
+      .dropdown-content a:hover {
+        background-color: #f1f1f1;
+      }
     </style>
-</head>
-<body>
-
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container">
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+      <div class="container">
         <a class="navbar-brand" href="#">Live Camera Feed</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarSupportedContent"
+          aria-controls="navbarSupportedContent"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
         </button>
 
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                <li class="nav-item">
-                    <a class="nav-link active" aria-current="page" href="#">Home</a>
-                </li>
-            </ul>
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+              <a class="nav-link active" aria-current="page" href="#">Home</a>
+            </li>
+          </ul>
         </div>
+      </div>
+    </nav>
+
+    <div class="dropdown">
+      <button class="dropbtn">Select Floor</button>
+
+      <div class="dropdown-content">
+        {% for floor in floors %}
+        <a
+          href="#"
+          onclick='loadImage("{{ floor.id }}" )'
+          >{{ floor.floor_name }}</a
+        >
+        {% endfor %}
+      </div>
     </div>
-</nav>
+    <div id="image-container"></div>
 
-<div class="dropdown">
-    <button class="dropbtn">Select Floor</button>
-    <div class="dropdown-content">
-        <a href="#" onclick="loadImage(0)">Ground Floor</a>
-        <a href="#" onclick="loadImage(1)">First Floor</a>
-        <a href="#" onclick="loadImage(2)">Second Floor</a>
+    <div style="position: relative">
+      <img
+        id="cameraImage"
+        src="{{ url_for('static', filename='camera.jpg') }}"
+        alt="Camera Image"
+        style="max-width: 500px; max-height: 500px"
+      />
+
+      <!-- Coordinates display -->
+      <div id="coordinates"></div>
     </div>
-</div>
+    <div class="container">
+      <form>
+        <label for="camera-id">Camera ID</label>
+        <input
+          type="number"
+          id="camera-id"
+          name="camera-id"
+          placeholder="Camera ID.."
+          required
+        />
 
-<div style="position: relative;">
-    <img id="cameraImage" src="{{ url_for('static', filename='camera.jpg') }}" alt="Camera Image" style="max-width: 500px; max-height: 500px;"/>
+        <label for="x-coordinates">X-Coordinates</label>
+        <input
+          type="number"
+          id="x-coordinates"
+          name="x-coordinates"
+          placeholder="X-Coordinates.."
+          required
+        />
 
-    <!-- Coordinates display -->
-    <div id="coordinates"></div>
-</div>
+        <label for="y-coordinates">Y-Coordinates</label>
+        <input
+          type="number"
+          id="y-coordinates"
+          name="y-coordinates"
+          placeholder="Y-Coordinates.."
+          required
+        />
 
-<!-- JavaScript -->
-<script>
-    // Function to load image for selected floor
-    function loadImage(floorId) {
+        <input type="submit" value="Submit" />
+      </form>
+    </div>
+
+    <script>
+      // Function to fetch and display the floor image
+      async function loadImage(floorId) {
+
+        clearCameraIcons();
+        // Fetch image for selected floor
+        
         fetch(`/get_image/${floorId}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.blob();
-            })
-            .then(blob => {
-                document.getElementById('cameraImage').src = URL.createObjectURL(blob);
-            })
-            .catch(error => console.error('Error fetching image:', error));
-    }
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Network response was not ok");
+            }
+            return response.blob();
+            
+          })
+          .then((blob) => {
+            document.getElementById("cameraImage").src =
+              URL.createObjectURL(blob);
+          })
+          .catch((error) => console.error("Error fetching image:", error));
 
-    // Function to show coordinates when mouse hovers over the image
-    function showCoordinates(event) {
+        // Fetch camera coordinates for selected floor
+        fetch(`/get_coordinates/${floorId}`)
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Network wasnot response was not ok");
+            }
+
+            return response.json();
+          })
+          .then((coordinates) => {
+            if (!Array.isArray(coordinates)) {
+              console.error("Coordinates is not an array:", coordinates);
+              return;
+            }
+            
+            
+           
+            // Display camera icons for fetched coordinates
+
+
+            coordinates.forEach((cameraData) => {
+             
+
+                if(floorId == cameraData.floor_id){
+                displayCameraIcon(cameraData);
+            
+                }
+            
+            });
+           
+          })
+         
+          .catch((error) =>
+            console.error("Error fetching camera coordinates:", error)
+          );
+      }
+      // Function to display camera icon at specified coordinates
+      function displayCameraIcon(cameraData) {
+        const cameraIcon = document.createElement("div"); // Create a div for the camera
+        cameraIcon.style.width = "20px";
+        cameraIcon.style.height = "20px";
+        cameraIcon.className = "camera-icon"; // Set class for styling
+        cameraIcon.style.left = cameraData.x + "px"; // Set horizontal position
+        cameraIcon.style.top = cameraData.y + "px"; // Set vertical position
+
+
+        
+        
+        // Append the camera icon to the image container
+        document
+          .getElementById("cameraImage")
+          .parentNode.appendChild(cameraIcon);
+      }
+
+      function showCoordinates(event) {
         // Get the coordinates relative to the image
         var x = event.offsetX;
         var y = event.offsetY;
 
         // Display the coordinates
-        document.getElementById('coordinates').style.display = 'block';
-        document.getElementById('coordinates').innerHTML = '<strong>Coordinates:</strong> X: ' + x + ', Y: ' + y;
+        document.getElementById("coordinates").style.display = "block";
+        document.getElementById("coordinates").innerHTML =
+          "<strong>Coordinates:</strong> X: " + x + ", Y: " + y;
         // Position the coordinates display near the mouse pointer
-        document.getElementById('coordinates').style.left = (event.pageX + 10) + 'px';
-        document.getElementById('coordinates').style.top = (event.pageY + 10) + 'px';
-    }
+        document.getElementById("coordinates").style.left =
+          event.pageX + 10 + "px";
+        document.getElementById("coordinates").style.top =
+          event.pageY + 10 + "px";
+      }
 
-    // Function to hide coordinates when mouse leaves the image
-    function hideCoordinates() {
-        document.getElementById('coordinates').style.display = 'none';
-    }
+      // Function to hide coordinates when mouse leaves the image
+      function hideCoordinates() {
+        document.getElementById("coordinates").style.display = "none";
+      }
 
-    // Add event listeners to the image
-    var image = document.getElementById('cameraImage');
-    image.addEventListener('mousemove', showCoordinates);
-    image.addEventListener('mouseleave', hideCoordinates);
+      // Add event listeners to the image
+      var image = document.getElementById("cameraImage");
+      image.addEventListener("mousemove", showCoordinates);
+      image.addEventListener("mouseleave", hideCoordinates);
 
-    // Fetch camera coordinates from the server and display camera icons
-    async function fetchAllCameraCoordinates() {
-        try {
-            const response = await fetch('/get_coordinates');
+      
 
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
+      // Function to handle the floor selection
+      
+     
+      // Function to clear existing camera icons from the image container
+      function clearCameraIcons() {
+        const imageContainer =
+          document.getElementById("cameraImage").parentNode;
+        const cameraIcons = imageContainer.querySelectorAll(".camera-icon");
+        cameraIcons.forEach((icon) => icon.remove());
+      }
+    </script>
 
-            const coordinates = await response.json(); // List of camera coordinates objects
-
-            if (!Array.isArray(coordinates)) {
-                console.error('Coordinates is not an array:', coordinates);
-                return; // Exit the function or handle the error appropriately
-            }
-
-            if (coordinates.length === 0) {
-                console.warn('No camera coordinates found');
-                return; // Handle case where no coordinates are available
-            }
-
-            coordinates.forEach(cameraData => {
-                displayCameraIcon(cameraData);  // Call function for each camera
-            });
-        } catch (error) {
-            console.error('Error fetching camera coordinates:', error);
-        }
-    }
-
-    // Function to display camera icon at specified coordinates
-    function displayCameraIcon(cameraData) {
-        const cameraIcon = document.createElement('div'); // Create a div for the camera 
-        cameraIcon.style.width = '20px'; 
-        cameraIcon.style.height = '20px';
-        cameraIcon.className = 'camera-icon'; // Set class for styling
-        cameraIcon.style.left = cameraData.x + 'px'; // Set horizontal position
-        cameraIcon.style.top = cameraData.y + 'px'; // Set vertical position
-
-        // Append the camera icon to the image container
-        document.getElementById('cameraImage').parentNode.appendChild(cameraIcon);
-    }
-
-    // Call the function to fetch and display camera coordinates
-    fetchAllCameraCoordinates();
-</script>
-
-<!-- Bootstrap and jQuery JavaScript -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-</body>
+    <!-- Bootstrap and jQuery JavaScript -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
 </html>

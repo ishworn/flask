@@ -181,3 +181,112 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<a href="#" onclick="loadImage('{{ floor.id }}', '{{ floor.floor_image }}')">{{ floor.floor_name }}</a>
+
+
+
+
+
+
+
+
+<div class="dropdown">
+    <button class="dropbtn">Select Floor</button>
+    <div class="dropdown-content">
+      <a href="#" onclick="loadImage(0)">Ground Floor</a>
+      <a href="#" onclick="loadImage(1)">First Floor</a>
+      <a href="#" onclick="loadImage(2)">Second Floor</a>
+    </div>
+  </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async function loadImage(floorId) {
+    // Fetch image for selected floor
+    console.log(floorId);
+    fetch(`/get_image/${floorId}`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.blob();
+        clearCameraIcons();
+      })
+      .then((blob) => {
+        document.getElementById("cameraImage").src =
+          URL.createObjectURL(blob);
+      })
+      .catch((error) => console.error("Error fetching image:", error));
+
+    // Fetch camera coordinates for selected floor
+    fetch(`/get_coordinates`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Network wasnot response was not ok");
+        }
+
+        return response.json();
+      })
+      .then((coordinates) => {
+        if (!Array.isArray(coordinates)) {
+          console.error("Coordinates is not an array:", coordinates);
+          return;
+        }
+        if (coordinates.length === 0) {
+          console.warn("No camera coordinates found for selected floor");
+          return;
+        }
+        // Display camera icons for fetched coordinates
+        coordinates.forEach((cameraData) => {
+          displayCameraIcon(cameraData);
+        });
+      })
+      .catch((error) =>
+        console.error("Error fetching camera coordinates:", error)
+      );
+  }
+
+

@@ -1,5 +1,5 @@
 import cv2
-import pypyodbc as odbc
+
 from flask import Flask, Response, render_template, request, send_file, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from io import BytesIO
@@ -14,7 +14,7 @@ app = Flask(__name__)
 
 
 
-cam = cv2.VideoCapture(1)
+cam = cv2.VideoCapture(0)
 
 # Login authentication
 app.secret_key = "Secret Key"
@@ -71,11 +71,13 @@ def generate_frames():
 
 @app.route('/')
 def index():
+    
  
   floors = Floor.query.all()
+ 
   
   
-  return render_template('index.html' , floors= floors ,)
+  return render_template('index.html' , floors =floors )
   # ... rest of the code
 
 
@@ -95,10 +97,10 @@ def index():
 def video_feed():
     return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
-@app.route('/get_image/<int:floor_id>')
-def get_image(floor_id):
+@app.route('/get_image/<int:id>')
+def get_image(id):
     try:
-        floor = Floor.query.get(floor_id)
+        floor = Floor.query.get(id)
         if floor:
             return send_file(BytesIO(floor.floor_image), mimetype='image/jpeg')
         else:
@@ -106,15 +108,21 @@ def get_image(floor_id):
     except Exception as e:
         return jsonify({'error': str(e)})
     
-@app.route('/get_coordinates')
-def get_coordinates():
+      
+    
+@app.route('/get_coordinates/<int:id>')
+def get_coordinates(id):
     try:
+    
+        floors = Floor.query.all()
         cameras = Camera.query.all()  # Retrieve all cameras
+        
         coordinates = []
         for camera in cameras:
             camera_coords = camera.get_coordinates()  # Assuming get_coordinates returns a dictionary
             if camera_coords:
-                coordinates.append({'camera_id': camera.id, 'x': camera_coords['x'], 'y': camera_coords['y']})
+                coordinates.append({'camera_id': camera.id, 'floor_id' : camera.floor_id , 'x': camera_coords['x'], 'y': camera_coords['y']})
+                
         return jsonify(coordinates)
     except Exception as e:
         return jsonify({'error': str(e)})
@@ -132,4 +140,4 @@ if __name__ == "__main__":
 
 
 
-
+    
