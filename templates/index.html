@@ -116,9 +116,7 @@
 
       <div class="dropdown-content">
         {% for floor in floors %}
-        <a
-          href="#"
-          onclick='loadImage("{{ floor.id }}" )'
+        <a href="#" onclick='loadImage("{{ floor.id }}" )'
           >{{ floor.floor_name }}</a
         >
         {% endfor %}
@@ -171,19 +169,66 @@
     </div>
 
     <script>
+      document.querySelector("form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        
+        // Create a FormData object from the form
+        const formData = new FormData(e.target);
+        
+        // Convert FormData to a plain object
+        const requestData = {};
+        formData.forEach((value, key) => {
+          // Update the keys to match the expected keys in the Flask route handler
+          switch (key) {
+            case 'camera-id':
+              requestData['camera_id'] = value;
+              break;
+            case 'x-coordinates':
+              requestData['coordinate_x'] = value;
+              break;
+            case 'y-coordinates':
+              requestData['coordinate_y'] = value;
+              break;
+            default:
+              // Ignore other keys
+              break;
+          }
+        });
+        
+        try {
+          // Send a POST request to the backend endpoint
+          const response = await fetch("/submit-form", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(requestData),
+          });
+          
+          // Check if the response is successful
+          if (response.ok) {
+            alert('Form submitted successfully!');
+          } else {
+            // Handle errors
+          }
+        } catch (error) {
+          console.error("Error:", error);
+        }
+      });
+      
+      
+
       // Function to fetch and display the floor image
       async function loadImage(floorId) {
-
         clearCameraIcons();
         // Fetch image for selected floor
-        
+
         fetch(`/get_image/${floorId}`)
           .then((response) => {
             if (!response.ok) {
               throw new Error("Network response was not ok");
             }
             return response.blob();
-            
           })
           .then((blob) => {
             document.getElementById("cameraImage").src =
@@ -205,24 +250,16 @@
               console.error("Coordinates is not an array:", coordinates);
               return;
             }
-            
-            
-           
+
             // Display camera icons for fetched coordinates
 
-
             coordinates.forEach((cameraData) => {
-             
-
-                if(floorId == cameraData.floor_id){
+              if (floorId == cameraData.floor_id) {
                 displayCameraIcon(cameraData);
-            
-                }
-            
+              }
             });
-           
           })
-         
+
           .catch((error) =>
             console.error("Error fetching camera coordinates:", error)
           );
@@ -236,9 +273,6 @@
         cameraIcon.style.left = cameraData.x + "px"; // Set horizontal position
         cameraIcon.style.top = cameraData.y + "px"; // Set vertical position
 
-
-        
-        
         // Append the camera icon to the image container
         document
           .getElementById("cameraImage")
@@ -271,11 +305,8 @@
       image.addEventListener("mousemove", showCoordinates);
       image.addEventListener("mouseleave", hideCoordinates);
 
-      
-
       // Function to handle the floor selection
-      
-     
+
       // Function to clear existing camera icons from the image container
       function clearCameraIcons() {
         const imageContainer =
