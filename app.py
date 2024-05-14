@@ -9,12 +9,7 @@ from sqlalchemy import Column, Integer, ForeignKey
 app = Flask(__name__)
 
 
-  
 
-
-
-
-cam = cv2.VideoCapture(0)
 
 # Login authentication
 app.secret_key = "Secret Key"
@@ -40,9 +35,10 @@ class Floor(db.Model):
 class Camera(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     camera_name = db.Column(db.String(100))
-    floor_id = db.Column(db.Integer, db.ForeignKey('floor.id'))  # Adjust this if necessary
+    floor_id = db.Column(db.Integer)
     coordinate_x = db.Column(db.Integer)
     coordinate_y = db.Column(db.Integer)
+    cam_urls = db.Column(db.String(255))
   
     def __repr__(self):
         return f'<Camera camera_name={self.camera_name} floor_id={self.floor_id} ' \
@@ -53,49 +49,14 @@ class Camera(db.Model):
          return {'x': self.coordinate_x, 'y': self.coordinate_y}
       else:
          return None
+  
 
-    
- 
-
-  # Return None if coordinates are not set
-
-class Test(db.Model):
-    id = db.Column(db.Integer, primary_key=True)  
-
-def generate_frames():
-    while True:
-        success, frame = cam.read()
-        if not success:
-            break
-        else:
-            ret, buffer = cv2.imencode('.jpg', frame)
-            frame = buffer.tobytes() 
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
 @app.route('/')
 def index():
-    
- 
   floors = Floor.query.all()
- 
-  
-  
   return render_template('index.html' , floors =floors )
-  # ... rest of the code
-
-
-   
-    
-    # try:
-    #     # Try to query the Test table
-    #     floors = Floor.query.first()
-    #     return 'Database connection successful'
-    # except Exception as e:
-    #     return f'Database connection failed: {str(e)}'
-    
-
-
+  
 
 @app.route('/submit-form', methods=['POST'])
 def submit_form():
@@ -128,81 +89,6 @@ def submit_form():
         return str(e), 500  # Return the error message with a status code
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# @app.route('/submit-form', methods=['POST'])
-# def submit_form():
-#     try:
-#         data = request.json
-#         print("Received data from form:", data)  # Print received data for debugging
-
-#         # Extract data from the request JSON
-#         id = data.get('camera_id')
-#         coordinate_x = data.get('coordinate_x')
-#         coordinate_y = data.get('coordinate_y')
-
-#         # Retrieve the previous floor_id value from the database
-#         previous_camera = Camera.query.order_by(Camera.id.desc()).first()
-#         previous_floor_id = previous_camera.floor_id if previous_camera else None
-#         previous_camera_name = previous_camera.camera_name if previous_camera else None
-        
-
-#         # Save data to the database
-#         new_camera = Camera(id=id, floor_id=previous_floor_id,camera_name=previous_camera_name, coordinate_x=coordinate_x, coordinate_y=coordinate_y)
-#         db.session.add(new_camera)
-#         db.session.commit()
-
-#         return jsonify({'message': 'Data saved successfully'}), 201
-
-#     except Exception as e:
-#         print("Error processing form data:", e)
-#         return jsonify({'error': 'Internal server error'}), 500
-
-
-
-# @app.route('/get-data', methods=['GET'])
-# def get_data():
-#     cameras = Camera.query.all()
-#     data_list = []
-#     for camera in cameras:
-#         data_list.append({
-#             'camera_name': camera.camera_name,
-#             'floor_id': camera.floor_id,
-#             'coordinate_x': camera.coordinate_x,
-#             'coordinate_y': camera.coordinate_y
-#         })
-#     return jsonify(data_list)
-
-
-
-
-
-@app.route('/video_feed')
-def video_feed():
-    return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
-
 @app.route('/get_image/<int:id>')
 def get_image(id):
     try:
@@ -220,7 +106,7 @@ def get_image(id):
 def get_coordinates(id):
     try:
     
-        floors = Floor.query.all()
+        # floors = Floor.query.all()
         cameras = Camera.query.all()  # Retrieve all cameras
         
         coordinates = []
@@ -235,6 +121,61 @@ def get_coordinates(id):
 
 
 
+
+
+
+ 
+   
+   
+def get_camera_urls():
+    try:
+        # Retrieve all camera objects from the database
+        cameras = Camera.query.all()
+
+        # Create an empty dictionary to store camera IDs and URLs
+        camera_urls = {}
+
+        # Extract camera IDs and URLs from the camera objects
+        for camera in cameras:
+            camera_urls[camera.id] = camera.cam_urls
+
+        # print(camera_urls)
+        return camera_urls
+    except Exception as e:
+        print("Error:", e)
+        return {}
+
+   
+
+# Function to generate frames from a specific camera
+def generate_frames(camera_url):
+    cap = cv2.VideoCapture(camera_url)
+    print(camera_url)
+
+    while True:
+        success, frame = cap.read()
+        if not success:
+            break
+        else:
+            ret, buffer = cv2.imencode('.jpg', frame)
+            frame = buffer.tobytes()
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+# Route to stream the video for a specific camera
+@app.route('/video_feed/<int:camera_id>')
+def video_feed(camera_id):
+    camera_urls = get_camera_urls()
+    
+    camera_url = camera_urls.get(camera_id)
+    # camera_url = 0
+    print(camera_url)
+    if camera_url:
+        print("successful")
+        return Response(generate_frames(camera_url), mimetype='multipart/x-mixed-replace; boundary=frame')
+        
+    else:
+        return "Camera not found", 404
 
 
 

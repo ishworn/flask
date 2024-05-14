@@ -1,186 +1,97 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Camera Feed</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        /* Define styles for the coordinate display */
-        #coordinates {
-            position: absolute;
-            background-color: rgba(255, 255, 255, 0.8);
-            padding: 5px;
-            display: none;
-        }
+    <!-- <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Webcam Feed</title>
+    </head>
+    <body>
+        <h1>Webcam Feed</h1>
+        <img src="{{ url_for('video_feed') }}" style="width: 100%;">
+    </body>
+    </html> -->
 
-        .camera-icon {
-            position: absolute;
-            width: 50px; /* Adjust icon width */
-            height: 50px; /* Adjust icon height */
-            background-image: url('./static/camera.png'); /* Replace with the URL of your camera icon image */
-            background-size: cover;
-            cursor: pointer; /* Optional: Change cursor to pointer on hover */
-            opacity: 1;
-        }
 
-        .dropdown {
-            position: relative;
-            display: inline-block;
-        }
 
-        .dropdown-content {
-            display: none;
-            position: absolute;
-            background-color: #f9f9f9;
-            min-width: 160px;
-            box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2);
-            z-index: 1;
-        }
 
-        .dropdown:hover .dropdown-content {
-            display: block;
-        }
 
-        .dropdown-content a {
-            color: black;
-            padding: 12px 16px;
-            text-decoration: none;
-            display: block;
-        }
 
-        .dropdown-content a:hover {
-            background-color: #f1f1f1;
-        }
-    </style>
-</head>
-<body>
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container">
-        <a class="navbar-brand" href="#">Live Camera Feed</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
 
-        <div class="collapse navbar-collapse" id="navbarSupportedContent">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                <li class="nav-item">
-                    <a class="nav-link active" aria-current="page" href="#">Home</a>
-                </li>
-            </ul>
-        </div>
-    </div>
-</nav>
 
-<div class="dropdown">
-    <button class="dropbtn">Select Floor</button>
-    <div class="dropdown-content">
-        <a href="#" onclick="loadImage(1)">Ground Floor</a>
-        <a href="#" onclick="loadImage(2)">First Floor</a>
-        <a href="#" onclick="loadImage(3)">Second Floor</a>
-    </div>
-</div>
 
-<div style="position: relative;">
-    <img id="cameraImage" src="{{ url_for('static', filename='camera.jpg') }}" alt="Camera Image" style="max-width: 500px; max-height: 500px;"/>
-
-    <!-- Coordinates display -->
-    <div id="coordinates"></div>
-</div>
-
-<!-- JavaScript -->
-<script>
-    // Function to load image for selected floor
-    function loadImage(floorId) {
-        fetch(`/get_image/${floorId}`)
+    function loadVideoFeed(camera_id) {
+        console.log(camera_id);
+        fetch(`/video_feed/${camera_id}`)
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Network response was not ok');
                 }
-                return response.blob();
+                return response.text(); // Assuming the response is HTML
             })
-            .then(blob => {
-                document.getElementById('cameraImage').src = URL.createObjectURL(blob);
+            .then(html => {
+                // Open the video feed in a new browser tab
+                const newTab = window.open("", "_blank");
+                newTab.document.write(html);
             })
-            .catch(error => console.error('Error fetching image:', error));
-    }
-
-    // Function to show coordinates when mouse hovers over the image
-    function showCoordinates(event) {
-        // Get the coordinates relative to the image
-        var x = event.offsetX;
-        var y = event.offsetY;
-
-        // Display the coordinates
-        document.getElementById('coordinates').style.display = 'block';
-        document.getElementById('coordinates').innerHTML = '<strong>Coordinates:</strong> X: ' + x + ', Y: ' + y;
-        // Position the coordinates display near the mouse pointer
-        document.getElementById('coordinates').style.left = (event.pageX + 10) + 'px';
-        document.getElementById('coordinates').style.top = (event.pageY + 10) + 'px';
-    }
-
-    // Function to hide coordinates when mouse leaves the image
-    function hideCoordinates() {
-        document.getElementById('coordinates').style.display = 'none';
-    }
-
-    // Add event listeners to the image
-    var image = document.getElementById('cameraImage');
-    image.addEventListener('mousemove', showCoordinates);
-    image.addEventListener('mouseleave', hideCoordinates);
-
-    // Fetch camera coordinates from the server and display camera icons
-    async function fetchAllCameraCoordinates() {
-        try {
-            const response = await fetch('/get_coordinates');
-
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-
-            const coordinates = await response.json(); // List of camera coordinates objects
-
-            if (!Array.isArray(coordinates)) {
-                console.error('Coordinates is not an array:', coordinates);
-                return; // Exit the function or handle the error appropriately
-            }
-
-            if (coordinates.length === 0) {
-                console.warn('No camera coordinates found');
-                return; // Handle case where no coordinates are available
-            }
-
-            coordinates.forEach(cameraData => {
-                displayCameraIcon(cameraData);  // Call function for each camera
+            .catch(error => {
+                console.error('Error:', error);
+                // Display an error message to the user
+                alert('Error loading video feed');
             });
-        } catch (error) {
-            console.error('Error fetching camera coordinates:', error);
-        }
     }
 
-    // Function to display camera icon at specified coordinates
-    function displayCameraIcon(cameraData) {
-        const cameraIcon = document.createElement('div'); // Create a div for the camera icon
-        style="max-width: 500px; max-height: 500px;"
-        cameraIcon.className = 'camera-icon'; // Set class for styling
-        cameraIcon.style.left = cameraData.x + 'px'; // Set horizontal position
-        cameraIcon.style.top = cameraData.y + 'px'; // Set vertical position
 
-        // Append the camera icon to the image container
-        document.getElementById('cameraImage').parentNode.appendChild(cameraIcon);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    function loadVideoFeed(camera_id) {
+        console.log(camera_id)
+        fetch(`/video_feed/${camera_id}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.text(); // Assuming the response is HTML
+            })
+            .then(html => {
+                // Display the video feed in a modal or overlay
+                displayVideoModal(html);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Display an error message to the user
+                alert('Error loading video feed');
+            });
     }
 
-    // Call the function to fetch and display camera coordinates
-    fetchAllCameraCoordinates();
-</script>
-
-<!-- Bootstrap and jQuery JavaScript -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
 
 
 
@@ -207,86 +118,13 @@
 
 
 
-
-
-
-
-
-
-
-<a href="#" onclick="loadImage('{{ floor.id }}', '{{ floor.floor_image }}')">{{ floor.floor_name }}</a>
-
-
-
-
-
-
-
-
-<div class="dropdown">
-    <button class="dropbtn">Select Floor</button>
-    <div class="dropdown-content">
-      <a href="#" onclick="loadImage(0)">Ground Floor</a>
-      <a href="#" onclick="loadImage(1)">First Floor</a>
-      <a href="#" onclick="loadImage(2)">Second Floor</a>
-    </div>
-  </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async function loadImage(floorId) {
-    // Fetch image for selected floor
-    console.log(floorId);
-    fetch(`/get_image/${floorId}`)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-        return response.blob();
-        clearCameraIcons();
-      })
-      .then((blob) => {
-        document.getElementById("cameraImage").src =
-          URL.createObjectURL(blob);
-      })
-      .catch((error) => console.error("Error fetching image:", error));
-
-    // Fetch camera coordinates for selected floor
-    fetch(`/get_coordinates`)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Network wasnot response was not ok");
-        }
-
-        return response.json();
-      })
-      .then((coordinates) => {
-        if (!Array.isArray(coordinates)) {
-          console.error("Coordinates is not an array:", coordinates);
-          return;
-        }
-        if (coordinates.length === 0) {
-          console.warn("No camera coordinates found for selected floor");
-          return;
-        }
-        // Display camera icons for fetched coordinates
-        coordinates.forEach((cameraData) => {
-          displayCameraIcon(cameraData);
-        });
-      })
-      .catch((error) =>
-        console.error("Error fetching camera coordinates:", error)
-      );
-  }
-
-
+    function displayVideoModal(html) {
+        // Display the video feed in a modal or overlay
+        // You can implement your modal/overlay logic here
+        // For example, you can create a modal element and append the HTML content to it
+        const modal = document.createElement('div');
+        modal.className = 'video-modal';
+        modal.innerHTML = html;
+        document.body.appendChild(modal);
+        // You can further customize the styling and behavior of the modal as needed
+    }

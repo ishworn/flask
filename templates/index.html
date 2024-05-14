@@ -47,8 +47,7 @@
 
       .camera-icon {
         position: absolute;
-        width: 50px; /* Adjust icon width */
-        height: 50px; /* Adjust icon height */
+
         background-image: url("./static/camera.png"); /* Replace with the URL of your camera icon image */
         background-size: cover;
         cursor: pointer; /* Optional: Change cursor to pointer on hover */
@@ -122,7 +121,7 @@
         {% endfor %}
       </div>
     </div>
-    <div id="image-container"></div>
+    
 
     <div style="position: relative">
       <img
@@ -171,30 +170,30 @@
     <script>
       document.querySelector("form").addEventListener("submit", async (e) => {
         e.preventDefault();
-        
+
         // Create a FormData object from the form
         const formData = new FormData(e.target);
-        
+
         // Convert FormData to a plain object
         const requestData = {};
         formData.forEach((value, key) => {
           // Update the keys to match the expected keys in the Flask route handler
           switch (key) {
-            case 'camera-id':
-              requestData['camera_id'] = value;
+            case "camera-id":
+              requestData["camera_id"] = value;
               break;
-            case 'x-coordinates':
-              requestData['coordinate_x'] = value;
+            case "x-coordinates":
+              requestData["coordinate_x"] = value;
               break;
-            case 'y-coordinates':
-              requestData['coordinate_y'] = value;
+            case "y-coordinates":
+              requestData["coordinate_y"] = value;
               break;
             default:
               // Ignore other keys
               break;
           }
         });
-        
+
         try {
           // Send a POST request to the backend endpoint
           const response = await fetch("/submit-form", {
@@ -204,10 +203,17 @@
             },
             body: JSON.stringify(requestData),
           });
-          
+
           // Check if the response is successful
           if (response.ok) {
-            alert('Form submitted successfully!');
+
+
+
+            setTimeout(() => {
+              window.location.reload();
+          }, 1000);
+            
+           
           } else {
             // Handle errors
           }
@@ -215,8 +221,6 @@
           console.error("Error:", error);
         }
       });
-      
-      
 
       // Function to fetch and display the floor image
       async function loadImage(floorId) {
@@ -264,6 +268,7 @@
             console.error("Error fetching camera coordinates:", error)
           );
       }
+      
       // Function to display camera icon at specified coordinates
       function displayCameraIcon(cameraData) {
         const cameraIcon = document.createElement("div"); // Create a div for the camera
@@ -272,8 +277,24 @@
         cameraIcon.className = "camera-icon"; // Set class for styling
         cameraIcon.style.left = cameraData.x + "px"; // Set horizontal position
         cameraIcon.style.top = cameraData.y + "px"; // Set vertical position
-
-        // Append the camera icon to the image container
+        cameraIcon.title = "Camera ID: " + cameraData.camera_id;
+       
+        
+        
+        cameraIcon.addEventListener('click', function() {
+          // Load the video feed for the clicked camera
+         
+          if (cameraData.camera_id !== undefined && cameraData.camera_id !== null) {
+            // Load the video feed for the clicked camera
+            loadVideoFeed(cameraData.camera_id); // Assuming cameraData.camera_id contains the camera ID
+        } else {
+            console.error('Error: camera ID is missing');
+            alert('Error: camera ID is missing');
+        }
+          
+        });
+        
+        //Append the camera icon to the image container
         document
           .getElementById("cameraImage")
           .parentNode.appendChild(cameraIcon);
@@ -294,6 +315,7 @@
         document.getElementById("coordinates").style.top =
           event.pageY + 10 + "px";
       }
+      
 
       // Function to hide coordinates when mouse leaves the image
       function hideCoordinates() {
@@ -314,6 +336,41 @@
         const cameraIcons = imageContainer.querySelectorAll(".camera-icon");
         cameraIcons.forEach((icon) => icon.remove());
       }
+
+    
+
+    function loadVideoFeed(camera_id) {
+      console.log(camera_id);
+      fetch(`/video_feed/${camera_id}`)
+          .then(response => {
+              if (!response.ok) {
+                  throw new Error('Network response was not ok');
+              }
+              return response.text(); // Assuming the response is HTML
+          })
+          .then(html => {
+              // Open the video feed in a new browser tab
+              const popupWidth = 800;
+              const popupHeight = 600;
+              const popupOptions = `width=${popupWidth},height=${popupHeight},top=100,left=100,resizable=yes,scrollbars=yes`;
+              const popupWindow = window.open("", "_blank", popupOptions);
+              popupWindow.document.write(html);
+          })
+          .catch(error => {
+              console.error('Error:', error);
+              // Display an error message to the user
+              alert('Error loading video feed');
+          });
+  }
+  
+
+    
+   
+
+
+
+
+
     </script>
 
     <!-- Bootstrap and jQuery JavaScript -->
